@@ -1,57 +1,63 @@
-from book_reservation import BookReservationSystem
+from booking_system import OnlineAppointmentBookingSystem
+from datetime import datetime
 
 
-# 1. Reserve the last available copy
-def test_last_available_copy():
-    system = BookReservationSystem(
-        books={"B1": 1},
-        students={"S1", "S2"}
+def test_two_users_same_slot():
+    system = OnlineAppointmentBookingSystem(
+        users={"U1", "U2"},
+        doctors={"D1"}
     )
 
-    assert system.reserve_book("S1", "B1") == True
-    assert system.available_copies("B1") == 0
-    assert system.reserve_book("S2", "B1") == False
+    slot = datetime(2026, 12, 5, 10, 30)
+
+    assert system.book_app("U1", "D1", slot) == True
+    assert system.book_app("U2", "D1", slot) == False
 
 
-# 2. Reserve an unavailable book
-def test_unavailable_book():
-    system = BookReservationSystem(
-        books={"B1": 0},
-        students={"S1"}
+def test_cancel_nonexistent_appointment():
+    system = OnlineAppointmentBookingSystem(
+        users={"U1"},
+        doctors={"D1"}
     )
 
-    assert system.reserve_book("S1", "B1") == False
+    slot = datetime(2026, 12, 5, 10, 30)
+
+    assert system.cancel_app("U1", "D1", slot) == False
 
 
-# 3. Duplicate reservation
-def test_duplicate_reservation():
-    system = BookReservationSystem(
-        books={"B1": 2},
-        students={"S1"}
+def test_past_time_slot():
+    system = OnlineAppointmentBookingSystem(
+        users={"U1"},
+        doctors={"D1"}
     )
 
-    system.reserve_book("S1", "B1")
+    slot = datetime(2020, 1, 1, 10, 30)
 
-    assert system.reserve_book("S1", "B1") == False
+    assert system.book_app("U1", "D1", slot) == False
 
 
-# 4. Cancel reservation twice
-def test_cancel_twice():
-    system = BookReservationSystem(
-        books={"B1": 2},
-        students={"S1"}
+def test_incomplete_details():
+    system = OnlineAppointmentBookingSystem(
+        users={"U1"},
+        doctors={"D1"}
     )
 
-    system.reserve_book("S1", "B1")
-    assert system.cancel_reservation("S1", "B1") == True
-    assert system.cancel_reservation("S1", "B1") == False
+    slot = datetime(2026, 12, 5, 10, 30)
+
+    assert system.book_app(None, "D1", slot) == False
+    assert system.book_app("U1", None, slot) == False
+    assert system.book_app("U1", "D1", None) == False
 
 
-# 5. Invalid student ID
-def test_invalid_student():
-    system = BookReservationSystem(
-        books={"B1": 2},
-        students={"S1"}
+def test_slot_available_after_cancellation():
+    system = OnlineAppointmentBookingSystem(
+        users={"U1", "U2"},
+        doctors={"D1"}
     )
 
-    assert system.reserve_book("S2", "B1") == False
+    slot = datetime(2026, 12, 5, 10, 30)
+
+    system.book_app("U1", "D1", slot)
+    system.cancel_app("U1", "D1", slot)
+
+    assert system.book_app("U2", "D1", slot) == True
